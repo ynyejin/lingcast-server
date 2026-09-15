@@ -1,6 +1,7 @@
 package com.lingcast.server.domain.user.entity;
 
 import com.lingcast.server.global.entity.BaseTimeEntity;
+import com.lingcast.server.domain.common.EnglishLevel;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -30,9 +31,4 @@ public class User extends BaseTimeEntity {
     @Column(name = "english_level", nullable = false, length = 20)
     private EnglishLevel englishLevel;
 
-    public enum EnglishLevel {
-        BEGINNER,
-        INTERMEDIATE,
-        ADVANCED
-    }
 }

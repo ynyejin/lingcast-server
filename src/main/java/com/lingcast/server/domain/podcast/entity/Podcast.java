@@ -1,5 +1,6 @@
 package com.lingcast.server.domain.podcast.entity;
 
+import com.lingcast.server.domain.common.EnglishLevel;
 import com.lingcast.server.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -37,12 +38,6 @@ public class Podcast extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private PodcastStatus status;
-
-    public enum EnglishLevel {
-        BEGINNER,
-        INTERMEDIATE,
-        ADVANCED
-    }
 
     public enum PodcastStatus {
         GENERATING,
