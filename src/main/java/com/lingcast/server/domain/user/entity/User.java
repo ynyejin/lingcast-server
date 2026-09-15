@@ -31,4 +31,17 @@ public class User extends BaseTimeEntity {
     @Column(name = "english_level", length = 20)
     private EnglishLevel englishLevel;
 
+    public static User create(
+            String email,
+            String encodedPassword,
+            String nickname
+    ) {
+        User user = new User();
+        user.email = email;
+        user.password = encodedPassword;
+        user.nickname = nickname;
+
+        return user;
+    }
+
 }
