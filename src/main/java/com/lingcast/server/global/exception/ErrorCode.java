@@ -22,7 +22,13 @@ public enum ErrorCode {
             HttpStatus.UNAUTHORIZED,
             "INVALID_CREDENTIALS",
             "이메일 또는 비밀번호가 올바르지 않습니다."
-    );
+    ),
+
+    INVALID_REFRESH_TOKEN(
+            HttpStatus.UNAUTHORIZED,
+            "INVALID_REFRESH_TOKEN",
+            "유효하지 않거나 만료된 Refresh Token입니다."
+    );;
 
     private final HttpStatus status;
     private final String code;

@@ -20,7 +20,8 @@ public class SecurityConfig {
                         // 회원가입은 로그인하지 않은 사용자도 접근 가능
                         .requestMatchers(
                                 "/api/v1/users/signup",
-                                "/api/v1/auth/login"
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/refresh"
                         ).permitAll()
 
                         // 그 외 API -> 인증 필요

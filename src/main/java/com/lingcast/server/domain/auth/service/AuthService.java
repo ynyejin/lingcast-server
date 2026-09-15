@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.lingcast.server.domain.user.dto.request.RefreshTokenRequest;
+import com.lingcast.server.domain.user.dto.response.RefreshTokenResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +49,38 @@ public class AuthService {
                 user,
                 jwtTokenProvider.getAccessTokenExpirationSeconds(),
                 jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
+    }
+
+    public RefreshTokenResponse refresh(RefreshTokenRequest request) {
+
+        String refreshToken = request.refreshToken();
+
+        // JWT의 서명과 만료시간이 유효한지 확인
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // Access Token이 재발급에 사용되는 것을 방지
+        if (!jwtTokenProvider.isRefreshToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // Refresh Token에 저장된 사용자 ID 추출
+        Long userId = jwtTokenProvider.getUserId(refreshToken);
+
+        // 토큰의 사용자가 실제로 존재하는지 확인
+        if (!userRepository.existsById(userId)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // 유효한 Refresh Token이면 새로운 Access Token만 발급
+        String newAccessToken =
+                jwtTokenProvider.createAccessToken(userId);
+
+        return RefreshTokenResponse.of(
+                newAccessToken,
+                jwtTokenProvider.getAccessTokenExpirationSeconds()
         );
     }
 }
