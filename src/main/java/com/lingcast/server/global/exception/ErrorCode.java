@@ -28,7 +28,13 @@ public enum ErrorCode {
             HttpStatus.UNAUTHORIZED,
             "INVALID_REFRESH_TOKEN",
             "유효하지 않거나 만료된 Refresh Token입니다."
-    );;
+    ),
+
+    UNAUTHORIZED(
+            HttpStatus.UNAUTHORIZED,
+            "UNAUTHORIZED",
+            "인증이 필요합니다."
+    );
 
     private final HttpStatus status;
     private final String code;

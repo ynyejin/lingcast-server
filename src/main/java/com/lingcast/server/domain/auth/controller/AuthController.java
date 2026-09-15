@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.lingcast.server.domain.user.dto.request.RefreshTokenRequest;
 import com.lingcast.server.domain.user.dto.response.RefreshTokenResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -45,6 +46,23 @@ public class AuthController {
                 ApiResponse.success(
                         response,
                         "Access Token이 재발급되었습니다."
+                )
+        );
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody RefreshTokenRequest request
+    ) {
+
+        // Access Token으로 인증된 사용자와 Refresh Token을 이용해 로그아웃 처리
+        authService.logout(userId, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "로그아웃되었습니다."
                 )
         );
     }

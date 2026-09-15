@@ -103,4 +103,41 @@ public class AuthService {
                 jwtTokenProvider.getAccessTokenExpirationSeconds()
         );
     }
+
+    public void logout(Long userId, RefreshTokenRequest request) {
+
+        String refreshToken = request.refreshToken();
+
+        // Refresh Token의 서명과 만료시간이 유효한지 확인
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // Access Token이 Refresh Token 대신 전달되는 것을 방지
+        if (!jwtTokenProvider.isRefreshToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // Refresh Token에 저장된 사용자 ID 추출
+        Long refreshTokenUserId = jwtTokenProvider.getUserId(refreshToken);
+
+        // Access Token으로 인증된 사용자와 Refresh Token의 사용자가 같은지 확인
+        if (!userId.equals(refreshTokenUserId)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // Redis에 저장된 Refresh Token 조회
+        String savedRefreshToken = refreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN)
+                );
+
+        // 요청받은 Refresh Token과 Redis에 저장된 토큰이 같은지 확인
+        if (!savedRefreshToken.equals(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // 로그아웃 처리: Redis에서 Refresh Token 삭제
+        refreshTokenRepository.deleteByUserId(userId);
+    }
 }

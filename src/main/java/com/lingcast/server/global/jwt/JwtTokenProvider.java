@@ -152,4 +152,23 @@ public class JwtTokenProvider {
     public long getRefreshTokenExpirationSeconds() {
         return refreshTokenExpiration / 1000;
     }
+
+    /**
+     * 전달받은 토큰이 Access Token인지 확인
+     */
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+
+            String tokenType = claims.get(
+                    TOKEN_TYPE_CLAIM,
+                    String.class
+            );
+
+            return ACCESS_TOKEN_TYPE.equals(tokenType);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
 }
