@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.lingcast.server.domain.user.dto.request.RefreshTokenRequest;
 import com.lingcast.server.domain.user.dto.response.RefreshTokenResponse;
+import com.lingcast.server.domain.auth.repository.RefreshTokenRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public LoginResponse login(LoginRequest request) {
 
@@ -42,6 +44,13 @@ public class AuthService {
 
         String refreshToken =
                 jwtTokenProvider.createRefreshToken(user.getId());
+
+        // 발급한 Refresh Token을 Redis에 저장하고 30일 후 자동 만료
+        refreshTokenRepository.save(
+                user.getId(),
+                refreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
 
         return LoginResponse.of(
                 accessToken,
@@ -66,15 +75,26 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // Refresh Token에 저장된 사용자 ID 추출
+        // Refresh Token에서 사용자 ID 추출
         Long userId = jwtTokenProvider.getUserId(refreshToken);
+
+        // Redis에 저장된 해당 사용자의 Refresh Token 조회
+        String savedRefreshToken = refreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN)
+                );
+
+        // 요청으로 받은 토큰과 Redis에 저장된 토큰이 같은지 확인
+        if (!savedRefreshToken.equals(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
 
         // 토큰의 사용자가 실제로 존재하는지 확인
         if (!userRepository.existsById(userId)) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // 유효한 Refresh Token이면 새로운 Access Token만 발급
+        // 모든 검증을 통과하면 새로운 Access Token만 발급
         String newAccessToken =
                 jwtTokenProvider.createAccessToken(userId);
 
