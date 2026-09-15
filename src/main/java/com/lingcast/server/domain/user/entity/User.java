@@ -28,7 +28,7 @@ public class User extends BaseTimeEntity {
     private String nickname;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "english_level", nullable = false, length = 20)
+    @Column(name = "english_level", length = 20)
     private EnglishLevel englishLevel;
 
 }
