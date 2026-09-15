@@ -16,6 +16,12 @@ public enum ErrorCode {
             HttpStatus.CONFLICT,
             "EMAIL_ALREADY_EXISTS",
             "이미 가입된 이메일입니다."
+    ),
+
+    INVALID_CREDENTIALS(
+            HttpStatus.UNAUTHORIZED,
+            "INVALID_CREDENTIALS",
+            "이메일 또는 비밀번호가 올바르지 않습니다."
     );
 
     private final HttpStatus status;

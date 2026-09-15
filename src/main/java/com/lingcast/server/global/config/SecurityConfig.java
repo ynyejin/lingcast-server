@@ -18,7 +18,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         // 회원가입은 로그인하지 않은 사용자도 접근 가능
-                        .requestMatchers("/api/v1/users/signup").permitAll()
+                        .requestMatchers(
+                                "/api/v1/users/signup",
+                                "/api/v1/auth/login"
+                        ).permitAll()
 
                         // 그 외 API -> 인증 필요
                         .anyRequest().authenticated()
