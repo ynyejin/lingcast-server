@@ -2,6 +2,7 @@ package com.lingcast.server.domain.user.service;
 
 import com.lingcast.server.domain.user.dto.request.SignupRequest;
 import com.lingcast.server.domain.user.dto.response.SignupResponse;
+import com.lingcast.server.domain.user.dto.response.UserResponse;
 import com.lingcast.server.domain.user.entity.User;
 import com.lingcast.server.domain.user.repository.UserRepository;
 import com.lingcast.server.global.exception.BusinessException;
@@ -41,5 +42,14 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         return SignupResponse.from(savedUser);
+    }
+
+    public UserResponse getMyInfo(Long userId) {
+
+        // Access Token에서 추출한 사용자 ID로 회원 정보 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        return UserResponse.from(user);
     }
 }
