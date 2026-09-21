@@ -1,7 +1,9 @@
 package com.lingcast.server.domain.user.controller;
 
 import com.lingcast.server.domain.user.dto.request.SignupRequest;
+import com.lingcast.server.domain.user.dto.request.UpdateUserRequest;
 import com.lingcast.server.domain.user.dto.response.SignupResponse;
+import com.lingcast.server.domain.user.dto.response.UpdateUserResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.lingcast.server.domain.user.dto.response.UserResponse;
 import com.lingcast.server.domain.user.service.UserService;
@@ -43,6 +45,20 @@ public class UserController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(response, "내 정보 조회에 성공했습니다.")
+        );
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<ApiResponse<UpdateUserResponse>> updateMyInfo(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody UpdateUserRequest request
+    ) {
+        // 현재 로그인한 사용자의 회원 정보 수정
+        UpdateUserResponse response =
+                userService.updateMyInfo(userId, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "회원 정보가 수정되었습니다.")
         );
     }
 }

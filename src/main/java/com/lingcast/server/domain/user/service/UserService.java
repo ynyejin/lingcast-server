@@ -1,7 +1,9 @@
 package com.lingcast.server.domain.user.service;
 
 import com.lingcast.server.domain.user.dto.request.SignupRequest;
+import com.lingcast.server.domain.user.dto.request.UpdateUserRequest;
 import com.lingcast.server.domain.user.dto.response.SignupResponse;
+import com.lingcast.server.domain.user.dto.response.UpdateUserResponse;
 import com.lingcast.server.domain.user.dto.response.UserResponse;
 import com.lingcast.server.domain.user.entity.User;
 import com.lingcast.server.domain.user.repository.UserRepository;
@@ -51,5 +53,21 @@ public class UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         return UserResponse.from(user);
+    }
+
+    @Transactional
+    public UpdateUserResponse updateMyInfo(
+            Long userId,
+            UpdateUserRequest request
+    ) {
+
+        // 현재 로그인한 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 닉네임 변경
+        user.updateNickname(request.nickname());
+
+        return UpdateUserResponse.from(user);
     }
 }

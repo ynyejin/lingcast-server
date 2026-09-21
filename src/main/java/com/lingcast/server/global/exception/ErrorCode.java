@@ -40,6 +40,12 @@ public enum ErrorCode {
             HttpStatus.NOT_FOUND,
             "USER_NOT_FOUND",
             "사용자를 찾을 수 없습니다."
+    ),
+
+    INVALID_NICKNAME(
+            HttpStatus.BAD_REQUEST,
+            "INVALID_NICKNAME",
+            "닉네임 형식이 올바르지 않습니다."
     );
 
     private final HttpStatus status;
