@@ -49,4 +49,9 @@ public class User extends BaseTimeEntity {
         this.nickname = nickname;
     }
 
+    // 사용자의 영어 학습 수준 변경
+    public void updateEnglishLevel(EnglishLevel englishLevel) {
+        this.englishLevel = englishLevel;
+    }
+
 }

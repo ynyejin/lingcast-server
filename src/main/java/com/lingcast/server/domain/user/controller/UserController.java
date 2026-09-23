@@ -1,7 +1,9 @@
 package com.lingcast.server.domain.user.controller;
 
+import com.lingcast.server.domain.user.dto.request.PreferenceRequest;
 import com.lingcast.server.domain.user.dto.request.SignupRequest;
 import com.lingcast.server.domain.user.dto.request.UpdateUserRequest;
+import com.lingcast.server.domain.user.dto.response.PreferenceResponse;
 import com.lingcast.server.domain.user.dto.response.SignupResponse;
 import com.lingcast.server.domain.user.dto.response.UpdateUserResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -60,5 +62,22 @@ public class UserController {
         return ResponseEntity.ok(
                 ApiResponse.success(response, "회원 정보가 수정되었습니다.")
         );
+    }
+
+    @PostMapping("/me/preferences")
+    public ResponseEntity<ApiResponse<PreferenceResponse>> savePreferences(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody PreferenceRequest request
+    ) {
+
+        // 현재 로그인한 사용자의 초기 개인화 설정 저장
+        PreferenceResponse response =
+                userService.savePreferences(userId, request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        response,
+                        "개인화 설정이 저장되었습니다."
+                ));
     }
 }

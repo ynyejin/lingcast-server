@@ -46,6 +46,12 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST,
             "INVALID_NICKNAME",
             "닉네임 형식이 올바르지 않습니다."
+    ),
+
+    INVALID_PREFERENCE(
+            HttpStatus.BAD_REQUEST,
+            "INVALID_PREFERENCE",
+            "지원하지 않는 영어 수준 또는 관심 분야입니다."
     );
 
     private final HttpStatus status;

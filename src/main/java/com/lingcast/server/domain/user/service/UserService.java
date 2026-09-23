@@ -1,7 +1,11 @@
 package com.lingcast.server.domain.user.service;
 
+import com.lingcast.server.domain.interest.entity.UserInterest;
+import com.lingcast.server.domain.interest.repository.InterestRepository;
+import com.lingcast.server.domain.interest.repository.UserInterestRepository;
 import com.lingcast.server.domain.user.dto.request.SignupRequest;
 import com.lingcast.server.domain.user.dto.request.UpdateUserRequest;
+import com.lingcast.server.domain.user.dto.response.PreferenceResponse;
 import com.lingcast.server.domain.user.dto.response.SignupResponse;
 import com.lingcast.server.domain.user.dto.response.UpdateUserResponse;
 import com.lingcast.server.domain.user.dto.response.UserResponse;
@@ -13,6 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.lingcast.server.domain.user.dto.request.PreferenceRequest;
+import com.lingcast.server.domain.interest.entity.Interest;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +29,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final InterestRepository interestRepository;
+    private final UserInterestRepository userInterestRepository;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -69,5 +79,40 @@ public class UserService {
         user.updateNickname(request.nickname());
 
         return UpdateUserResponse.from(user);
+    }
+
+    @Transactional
+    public PreferenceResponse savePreferences(
+            Long userId,
+            PreferenceRequest request
+    ) {
+
+        // 현재 로그인한 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 요청받은 관심 분야를 DB에서 조회
+        List<Interest> interests =
+                interestRepository.findAllByNameIn(request.categories());
+
+        // 요청한 관심 분야 중 지원하지 않는 값이 있는지 확인
+        if (interests.size() != request.categories().size()) {
+            throw new BusinessException(ErrorCode.INVALID_PREFERENCE);
+        }
+
+        // 사용자의 영어 수준 설정
+        user.updateEnglishLevel(request.englishLevel());
+
+        // 선택한 관심 분야를 사용자와 연결하여 저장
+        List<UserInterest> userInterests = interests.stream()
+                .map(interest -> UserInterest.create(user, interest))
+                .toList();
+
+        userInterestRepository.saveAll(userInterests);
+
+        return PreferenceResponse.of(
+                user.getEnglishLevel(),
+                request.categories()
+        );
     }
 }

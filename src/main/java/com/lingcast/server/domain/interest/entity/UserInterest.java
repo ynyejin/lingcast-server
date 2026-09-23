@@ -32,4 +32,12 @@ public class UserInterest {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "interest_id", nullable = false)
     private Interest interest;
+
+    public static UserInterest create(User user, Interest interest) {
+        UserInterest userInterest = new UserInterest();
+        userInterest.user = user;
+        userInterest.interest = interest;
+
+        return userInterest;
+    }
 }
