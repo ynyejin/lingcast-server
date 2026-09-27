@@ -134,4 +134,45 @@ public class UserService {
                 categories
         );
     }
+
+    @Transactional
+    public PreferenceResponse updatePreferences(
+            Long userId,
+            PreferenceRequest request
+    ) {
+
+        // 현재 로그인한 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 요청받은 관심 분야를 DB에서 조회
+        List<Interest> interests =
+                interestRepository.findAllByNameIn(request.categories());
+
+        // 지원하지 않는 관심 분야가 포함되어 있는지 확인
+        if (interests.size() != request.categories().size()) {
+            throw new BusinessException(ErrorCode.INVALID_PREFERENCE);
+        }
+
+        // 영어 수준 변경
+        user.updateEnglishLevel(request.englishLevel());
+
+        // 기존 관심 분야 연결 삭제
+        userInterestRepository.deleteAllByUserId(userId);
+
+        // 새로운 관심 분야를 저장하기 전에 DELETE를 DB에 즉시 반영
+        userInterestRepository.flush();
+
+        // 새로 선택한 관심 분야 연결 생성
+        List<UserInterest> userInterests = interests.stream()
+                .map(interest -> UserInterest.create(user, interest))
+                .toList();
+
+        userInterestRepository.saveAll(userInterests);
+
+        return PreferenceResponse.of(
+                user.getEnglishLevel(),
+                request.categories()
+        );
+    }
 }

@@ -95,4 +95,22 @@ public class UserController {
                 )
         );
     }
+
+    @PatchMapping("/me/preferences")
+    public ResponseEntity<ApiResponse<PreferenceResponse>> updatePreferences(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody PreferenceRequest request
+    ) {
+
+        // 현재 로그인한 사용자의 개인화 설정 변경
+        PreferenceResponse response =
+                userService.updatePreferences(userId, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        response,
+                        "개인화 설정이 변경되었습니다."
+                )
+        );
+    }
 }
