@@ -80,4 +80,19 @@ public class UserController {
                         "개인화 설정이 저장되었습니다."
                 ));
     }
+
+    @GetMapping("/me/preferences")
+    public ResponseEntity<ApiResponse<PreferenceResponse>> getPreferences(
+            @AuthenticationPrincipal Long userId
+    ) {
+        // 현재 로그인한 사용자의 개인화 설정 조회
+        PreferenceResponse response = userService.getPreferences(userId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        response,
+                        "개인화 설정 조회에 성공했습니다."
+                )
+        );
+    }
 }

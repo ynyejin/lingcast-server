@@ -115,4 +115,23 @@ public class UserService {
                 request.categories()
         );
     }
+
+    @Transactional(readOnly = true)
+    public PreferenceResponse getPreferences(Long userId) {
+
+        // 현재 로그인한 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 사용자가 선택한 관심 분야 조회
+        List<String> categories = userInterestRepository.findAllByUserId(userId)
+                .stream()
+                .map(userInterest -> userInterest.getInterest().getName())
+                .toList();
+
+        return PreferenceResponse.of(
+                user.getEnglishLevel(),
+                categories
+        );
+    }
 }
