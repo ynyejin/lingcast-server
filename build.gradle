@@ -41,6 +41,9 @@ dependencies {
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // 외부 REST API 호출
+    implementation 'org.springframework.boot:spring-boot-restclient'
 }
 
 tasks.named('test') {

@@ -28,12 +28,40 @@ public class News extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String source;
 
-    @Column(name = "original_url", nullable = false, length = 1000)
+    @Column(
+            name = "original_url",
+            nullable = false,
+            unique = true,
+            length = 1000
+    )
     private String originalUrl;
+
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
 
     @Column(nullable = false, length = 50)
     private String category;
 
     @Column(name = "published_at", nullable = false)
     private LocalDateTime publishedAt;
+
+    public static News create(
+            String title,
+            String summary,
+            String source,
+            String originalUrl,
+            String imageUrl,
+            String category,
+            LocalDateTime publishedAt
+    ) {
+        News news = new News();
+        news.title = title;
+        news.summary = summary;
+        news.source = source;
+        news.originalUrl = originalUrl;
+        news.imageUrl = imageUrl;
+        news.category = category;
+        news.publishedAt = publishedAt;
+        return news;
+    }
 }
