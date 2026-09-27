@@ -1,5 +1,7 @@
 package com.lingcast.server.domain.news.service;
 
+import com.lingcast.server.domain.interest.entity.UserInterest;
+import com.lingcast.server.domain.interest.repository.UserInterestRepository;
 import com.lingcast.server.domain.news.client.GNewsClient;
 import com.lingcast.server.domain.news.dto.external.GNewsArticle;
 import com.lingcast.server.domain.news.dto.external.GNewsResponse;
@@ -26,6 +28,7 @@ public class NewsService {
 
     private final GNewsClient gNewsClient;
     private final NewsRepository newsRepository;
+    private final UserInterestRepository userInterestRepository;
 
     @Transactional
     public int collectNews(String category) {
@@ -114,5 +117,35 @@ public class NewsService {
                 );
 
         return NewsDetailResponse.from(news);
+    }
+
+    @Transactional(readOnly = true)
+    public NewsListResponse getRecommendedNews(
+            Long userId,
+            int page,
+            int size
+    ) {
+        // 사용자가 선택한 관심사 조회
+        List<UserInterest> userInterests =
+                userInterestRepository.findAllByUserId(userId);
+
+        List<String> categories = userInterests.stream()
+                .map(userInterest -> userInterest.getInterest().getName())
+                .toList();
+
+        // 최신 뉴스부터 조회
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "publishedAt")
+        );
+
+        Page<News> newsPage =
+                newsRepository.findAllByCategoryIn(categories, pageable);
+
+        Page<NewsListItemResponse> responsePage =
+                newsPage.map(NewsListItemResponse::from);
+
+        return NewsListResponse.from(responsePage);
     }
 }

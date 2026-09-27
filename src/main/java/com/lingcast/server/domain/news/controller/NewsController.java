@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import com.lingcast.server.domain.news.dto.response.NewsListResponse;
 import com.lingcast.server.global.response.ApiResponse;
 import com.lingcast.server.domain.news.dto.response.NewsDetailResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/v1/news")
@@ -46,6 +47,21 @@ public class NewsController {
         return ApiResponse.success(
                 response,
                 "뉴스 상세 조회에 성공했습니다."
+        );
+    }
+
+    @GetMapping("/recommendations")
+    public ApiResponse<NewsListResponse> getRecommendedNews(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        NewsListResponse response =
+                newsService.getRecommendedNews(userId, page, size);
+
+        return ApiResponse.success(
+                response,
+                "추천 뉴스 조회에 성공했습니다."
         );
     }
 }
