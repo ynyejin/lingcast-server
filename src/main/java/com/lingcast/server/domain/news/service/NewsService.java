@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import com.lingcast.server.domain.news.dto.response.NewsDetailResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -101,5 +102,17 @@ public class NewsService {
                 newsPage.map(NewsListItemResponse::from);
 
         return NewsListResponse.from(responsePage);
+    }
+
+    @Transactional(readOnly = true)
+    public NewsDetailResponse getNewsDetail(Long newsId) {
+
+        // 뉴스 ID로 상세 정보 조회
+        News news = newsRepository.findById(newsId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("존재하지 않는 뉴스입니다.")
+                );
+
+        return NewsDetailResponse.from(news);
     }
 }

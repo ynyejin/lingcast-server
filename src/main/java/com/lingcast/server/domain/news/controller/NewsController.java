@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import com.lingcast.server.domain.news.dto.response.NewsListResponse;
 import com.lingcast.server.global.response.ApiResponse;
+import com.lingcast.server.domain.news.dto.response.NewsDetailResponse;
 
 @RestController
 @RequestMapping("/api/v1/news")
@@ -33,5 +34,18 @@ public class NewsController {
                 newsService.getNewsList(category, page, size);
 
         return ApiResponse.success(response, "뉴스 목록 조회에 성공했습니다.");
+    }
+
+    @GetMapping("/{newsId}")
+    public ApiResponse<NewsDetailResponse> getNewsDetail(
+            @PathVariable Long newsId
+    ) {
+        NewsDetailResponse response =
+                newsService.getNewsDetail(newsId);
+
+        return ApiResponse.success(
+                response,
+                "뉴스 상세 조회에 성공했습니다."
+        );
     }
 }
