@@ -9,6 +9,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.lingcast.server.domain.news.dto.response.NewsListItemResponse;
+import com.lingcast.server.domain.news.dto.response.NewsListResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -67,5 +74,32 @@ public class NewsService {
             case "과학" -> "science";
             default -> throw new IllegalArgumentException("지원하지 않는 뉴스 카테고리입니다.");
         };
+    }
+
+    @Transactional(readOnly = true)
+    public NewsListResponse getNewsList(
+            String category,
+            int page,
+            int size
+    ) {
+        // 최신 뉴스부터 조회
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "publishedAt")
+        );
+
+        Page<News> newsPage;
+
+        if (category == null || category.isBlank()) {
+            newsPage = newsRepository.findAll(pageable);
+        } else {
+            newsPage = newsRepository.findAllByCategory(category, pageable);
+        }
+
+        Page<NewsListItemResponse> responsePage =
+                newsPage.map(NewsListItemResponse::from);
+
+        return NewsListResponse.from(responsePage);
     }
 }
