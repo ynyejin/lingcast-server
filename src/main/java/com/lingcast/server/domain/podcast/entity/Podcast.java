@@ -32,6 +32,10 @@ public class Podcast extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT")
     private String script;
 
+    // 생성된 팟캐스트 음성 파일 주소
+    @Column(name = "audio_url", length = 1000)
+    private String audioUrl;
+
     @Column(name = "duration_sec")
     private Integer durationSec;
 
@@ -43,5 +47,22 @@ public class Podcast extends BaseTimeEntity {
         GENERATING,
         COMPLETED,
         FAILED
+    }
+
+    // 새로운 팟캐스트 생성
+    public static Podcast create(
+            String title,
+            String category,
+            EnglishLevel englishLevel,
+            String script
+    ) {
+        Podcast podcast = new Podcast();
+        podcast.title = title;
+        podcast.category = category;
+        podcast.englishLevel = englishLevel;
+        podcast.script = script;
+        podcast.status = PodcastStatus.GENERATING;
+
+        return podcast;
     }
 }

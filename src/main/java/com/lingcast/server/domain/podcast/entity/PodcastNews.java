@@ -32,4 +32,12 @@ public class PodcastNews {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "news_id", nullable = false)
     private News news;
+
+    // 팟캐스트와 원본 뉴스를 연결
+    public static PodcastNews create(Podcast podcast, News news) {
+        PodcastNews podcastNews = new PodcastNews();
+        podcastNews.podcast = podcast;
+        podcastNews.news = news;
+        return podcastNews;
+    }
 }

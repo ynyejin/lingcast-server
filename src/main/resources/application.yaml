@@ -26,3 +26,6 @@ jwt:
 gnews:
   api-key: ${GNEWS_API_KEY}
   base-url: https://gnews.io/api/v4
+
+gemini:
+  api-key: ${GEMINI_API_KEY}
