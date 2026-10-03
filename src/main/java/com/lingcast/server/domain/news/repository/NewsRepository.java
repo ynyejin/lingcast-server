@@ -20,4 +20,7 @@ public interface NewsRepository extends JpaRepository<News, Long> {
             List<String> categories,
             Pageable pageable
     );
+
+    // 특정 카테고리의 최신 뉴스 3개 조회
+    List<News> findTop3ByCategoryOrderByPublishedAtDesc(String category);
 }
