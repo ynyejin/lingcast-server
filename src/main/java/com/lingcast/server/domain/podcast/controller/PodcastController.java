@@ -1,6 +1,7 @@
 package com.lingcast.server.domain.podcast.controller;
 
 import com.lingcast.server.domain.podcast.client.GeminiClient;
+import com.lingcast.server.domain.podcast.entity.Podcast;
 import com.lingcast.server.domain.podcast.service.PodcastService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +22,8 @@ public class PodcastController {
             @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "IT") String category
     ) {
-        // 로그인 사용자의 영어 레벨에 맞는 스크립트 생성
-        return podcastService.generatePodcastScript(userId, category);
+        Podcast podcast = podcastService.generatePodcast(userId, category);
+
+        return "생성된 podcastId: " + podcast.getId();
     }
 }

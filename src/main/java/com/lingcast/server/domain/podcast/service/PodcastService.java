@@ -4,10 +4,15 @@ import com.lingcast.server.domain.common.EnglishLevel;
 import com.lingcast.server.domain.news.entity.News;
 import com.lingcast.server.domain.news.repository.NewsRepository;
 import com.lingcast.server.domain.podcast.client.GeminiClient;
+import com.lingcast.server.domain.podcast.entity.Podcast;
+import com.lingcast.server.domain.podcast.entity.PodcastNews;
+import com.lingcast.server.domain.podcast.repository.PodcastNewsRepository;
+import com.lingcast.server.domain.podcast.repository.PodcastRepository;
 import com.lingcast.server.domain.user.entity.User;
 import com.lingcast.server.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,14 +23,16 @@ public class PodcastService {
     private final NewsRepository newsRepository;
     private final UserRepository userRepository;
     private final GeminiClient geminiClient;
+    private final PodcastRepository podcastRepository;
+    private final PodcastNewsRepository podcastNewsRepository;
 
-    public String generatePodcastScript(Long userId, String category) {
+    @Transactional
+    public Podcast generatePodcast(Long userId, String category) {
 
         // 로그인한 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // 사용자의 영어 레벨 조회
         EnglishLevel englishLevel = user.getEnglishLevel();
 
         // 해당 카테고리의 최신 뉴스 3개 조회
@@ -36,10 +43,30 @@ public class PodcastService {
             throw new IllegalArgumentException("팟캐스트를 생성할 뉴스가 없습니다.");
         }
 
-        // 사용자 영어 레벨을 포함한 프롬프트 생성
+        // Gemini 프롬프트 생성
         String prompt = createPrompt(category, englishLevel, newsList);
 
-        return geminiClient.generateText(prompt);
+        // Gemini로 팟캐스트 스크립트 생성
+        String script = geminiClient.generateText(prompt);
+
+        // 팟캐스트 저장
+        Podcast podcast = Podcast.create(
+                createPodcastTitle(category),
+                category,
+                englishLevel,
+                script
+        );
+
+        podcastRepository.save(podcast);
+
+        // 팟캐스트와 사용된 뉴스 연결
+        List<PodcastNews> podcastNewsList = newsList.stream()
+                .map(news -> PodcastNews.create(podcast, news))
+                .toList();
+
+        podcastNewsRepository.saveAll(podcastNewsList);
+
+        return podcast;
     }
 
     private String createPrompt(
@@ -89,5 +116,10 @@ public class PodcastService {
         }
 
         return prompt.toString();
+    }
+
+    private String createPodcastTitle(String category) {
+        // 카테고리별 팟캐스트 제목 생성
+        return "Today's " + category + " Briefing";
     }
 }
