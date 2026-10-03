@@ -6,6 +6,8 @@ import com.lingcast.server.domain.news.repository.NewsRepository;
 import com.lingcast.server.domain.podcast.client.GeminiClient;
 import com.lingcast.server.domain.podcast.dto.PodcastCreateResponse;
 import com.lingcast.server.domain.podcast.dto.PodcastDetailResponse;
+import com.lingcast.server.domain.podcast.dto.PodcastListItemResponse;
+import com.lingcast.server.domain.podcast.dto.PodcastListResponse;
 import com.lingcast.server.domain.podcast.entity.Podcast;
 import com.lingcast.server.domain.podcast.entity.PodcastNews;
 import com.lingcast.server.domain.podcast.repository.PodcastNewsRepository;
@@ -13,6 +15,10 @@ import com.lingcast.server.domain.podcast.repository.PodcastRepository;
 import com.lingcast.server.domain.user.entity.User;
 import com.lingcast.server.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -135,5 +141,22 @@ public class PodcastService {
                 );
 
         return PodcastDetailResponse.from(podcast);
+    }
+
+    @Transactional(readOnly = true)
+    public PodcastListResponse getPodcastList(int page, int size) {
+
+        // 최신 생성된 팟캐스트부터 조회
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<PodcastListItemResponse> podcastPage =
+                podcastRepository.findAll(pageable)
+                        .map(PodcastListItemResponse::from);
+
+        return PodcastListResponse.from(podcastPage);
     }
 }
