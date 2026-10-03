@@ -1,6 +1,7 @@
 package com.lingcast.server.domain.podcast.controller;
 
 import com.lingcast.server.domain.podcast.dto.PodcastCreateResponse;
+import com.lingcast.server.domain.podcast.dto.PodcastDetailResponse;
 import com.lingcast.server.domain.podcast.service.PodcastService;
 import com.lingcast.server.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,20 @@ public class PodcastController {
         return ApiResponse.success(
                 response,
                 "팟캐스트 생성에 성공했습니다."
+        );
+    }
+
+    @GetMapping("/{podcastId}")
+    public ApiResponse<PodcastDetailResponse> getPodcastDetail(
+            @PathVariable Long podcastId
+    ) {
+        // 팟캐스트 상세 정보 조회
+        PodcastDetailResponse response =
+                podcastService.getPodcastDetail(podcastId);
+
+        return ApiResponse.success(
+                response,
+                "팟캐스트 상세 조회에 성공했습니다."
         );
     }
 }

@@ -5,6 +5,7 @@ import com.lingcast.server.domain.news.entity.News;
 import com.lingcast.server.domain.news.repository.NewsRepository;
 import com.lingcast.server.domain.podcast.client.GeminiClient;
 import com.lingcast.server.domain.podcast.dto.PodcastCreateResponse;
+import com.lingcast.server.domain.podcast.dto.PodcastDetailResponse;
 import com.lingcast.server.domain.podcast.entity.Podcast;
 import com.lingcast.server.domain.podcast.entity.PodcastNews;
 import com.lingcast.server.domain.podcast.repository.PodcastNewsRepository;
@@ -122,5 +123,17 @@ public class PodcastService {
     private String createPodcastTitle(String category) {
         // 카테고리별 팟캐스트 제목 생성
         return "Today's " + category + " Briefing";
+    }
+
+    @Transactional(readOnly = true)
+    public PodcastDetailResponse getPodcastDetail(Long podcastId) {
+
+        // 팟캐스트 조회
+        Podcast podcast = podcastRepository.findById(podcastId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("존재하지 않는 팟캐스트입니다.")
+                );
+
+        return PodcastDetailResponse.from(podcast);
     }
 }
