@@ -65,4 +65,16 @@ public class Podcast extends BaseTimeEntity {
 
         return podcast;
     }
+
+    // 팟캐스트 음성 생성 완료
+    public void complete(String audioUrl, Integer durationSec) {
+        this.audioUrl = audioUrl;
+        this.durationSec = durationSec;
+        this.status = PodcastStatus.COMPLETED;
+    }
+
+    // 팟캐스트 음성 생성 실패
+    public void fail() {
+        this.status = PodcastStatus.FAILED;
+    }
 }

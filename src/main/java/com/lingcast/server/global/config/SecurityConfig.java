@@ -32,6 +32,7 @@ public class SecurityConfig {
                                 "/api/v1/users/signup",
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
+                                "/audio/podcasts/**",
                                 "/error"
                         ).permitAll()
                         // 그 외 API는 인증 필요

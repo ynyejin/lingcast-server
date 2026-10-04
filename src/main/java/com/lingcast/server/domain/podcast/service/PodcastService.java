@@ -4,6 +4,7 @@ import com.lingcast.server.domain.common.EnglishLevel;
 import com.lingcast.server.domain.news.entity.News;
 import com.lingcast.server.domain.news.repository.NewsRepository;
 import com.lingcast.server.domain.podcast.client.GeminiClient;
+import com.lingcast.server.domain.podcast.client.GeminiTtsClient;
 import com.lingcast.server.domain.podcast.dto.*;
 import com.lingcast.server.domain.podcast.entity.Podcast;
 import com.lingcast.server.domain.podcast.entity.PodcastNews;
@@ -30,6 +31,8 @@ public class PodcastService {
     private final GeminiClient geminiClient;
     private final PodcastRepository podcastRepository;
     private final PodcastNewsRepository podcastNewsRepository;
+    private final GeminiTtsClient geminiTtsClient;
+    private final AudioFileService audioFileService;
 
     @Transactional
     public PodcastCreateResponse generatePodcast(Long userId, String category) {
@@ -70,6 +73,29 @@ public class PodcastService {
                 .toList();
 
         podcastNewsRepository.saveAll(podcastNewsList);
+
+        try {
+            // 생성된 팟캐스트 스크립트를 음성으로 변환
+            byte[] pcmAudio =
+                    geminiTtsClient.generateSpeech(script);
+
+            // PCM 데이터를 WAV 파일로 저장
+            String audioUrl =
+                    audioFileService.saveAsWav(
+                            podcast.getId(),
+                            pcmAudio
+                    );
+
+            // 팟캐스트 생성 완료 처리
+            podcast.complete(audioUrl, null);
+
+        } catch (Exception e) {
+
+            // TTS 또는 음성 파일 생성 실패 처리
+            podcast.fail();
+
+            throw e;
+        }
 
         return PodcastCreateResponse.from(podcast);
     }

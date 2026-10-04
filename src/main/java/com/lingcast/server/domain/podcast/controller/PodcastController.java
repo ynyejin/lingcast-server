@@ -1,5 +1,6 @@
 package com.lingcast.server.domain.podcast.controller;
 
+import com.lingcast.server.domain.podcast.client.GeminiTtsClient;
 import com.lingcast.server.domain.podcast.dto.PodcastCreateResponse;
 import com.lingcast.server.domain.podcast.dto.PodcastDetailResponse;
 import com.lingcast.server.domain.podcast.dto.PodcastListResponse;
@@ -10,12 +11,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 @RestController
 @RequestMapping("/api/v1/podcasts")
 @RequiredArgsConstructor
 public class PodcastController {
 
     private final PodcastService podcastService;
+    private final GeminiTtsClient geminiTtsClient;
 
     @PostMapping
     public ApiResponse<PodcastCreateResponse> createPodcast(
