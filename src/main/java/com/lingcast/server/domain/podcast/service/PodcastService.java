@@ -250,4 +250,31 @@ public class PodcastService {
 
         userPodcastHistoryRepository.save(history);
     }
+
+    @Transactional
+    public void completePodcast(
+            Long userId,
+            Long podcastId
+    ) {
+
+        // 팟캐스트 존재 여부 확인
+        if (!podcastRepository.existsById(podcastId)) {
+            throw new IllegalArgumentException(
+                    "존재하지 않는 팟캐스트입니다."
+            );
+        }
+
+        // 사용자의 청취 기록 조회
+        UserPodcastHistory history =
+                userPodcastHistoryRepository
+                        .findByUserIdAndPodcastId(userId, podcastId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "팟캐스트 청취 기록이 없습니다."
+                                )
+                        );
+
+        // 청취 완료 처리
+        history.complete();
+    }
 }

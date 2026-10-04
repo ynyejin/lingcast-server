@@ -113,4 +113,19 @@ public class PodcastController {
                 "팟캐스트 재생 위치 저장에 성공했습니다."
         );
     }
+
+    @PostMapping("/{podcastId}/complete")
+    public ApiResponse<Void> completePodcast(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long podcastId
+    ) {
+
+        // 팟캐스트 청취 완료 처리
+        podcastService.completePodcast(userId, podcastId);
+
+        return ApiResponse.success(
+                null,
+                "팟캐스트 청취 완료 처리에 성공했습니다."
+        );
+    }
 }

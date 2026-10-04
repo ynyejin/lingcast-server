@@ -66,4 +66,10 @@ public class UserPodcastHistory {
         this.progressSec = progressSec;
         this.lastListenedAt = LocalDateTime.now();
     }
+
+    // 팟캐스트 청취 완료 처리
+    public void complete() {
+        this.completed = true;
+        this.lastListenedAt = LocalDateTime.now();
+    }
 }
