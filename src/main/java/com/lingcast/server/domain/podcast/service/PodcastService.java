@@ -4,10 +4,7 @@ import com.lingcast.server.domain.common.EnglishLevel;
 import com.lingcast.server.domain.news.entity.News;
 import com.lingcast.server.domain.news.repository.NewsRepository;
 import com.lingcast.server.domain.podcast.client.GeminiClient;
-import com.lingcast.server.domain.podcast.dto.PodcastCreateResponse;
-import com.lingcast.server.domain.podcast.dto.PodcastDetailResponse;
-import com.lingcast.server.domain.podcast.dto.PodcastListItemResponse;
-import com.lingcast.server.domain.podcast.dto.PodcastListResponse;
+import com.lingcast.server.domain.podcast.dto.*;
 import com.lingcast.server.domain.podcast.entity.Podcast;
 import com.lingcast.server.domain.podcast.entity.PodcastNews;
 import com.lingcast.server.domain.podcast.repository.PodcastNewsRepository;
@@ -158,5 +155,17 @@ public class PodcastService {
                         .map(PodcastListItemResponse::from);
 
         return PodcastListResponse.from(podcastPage);
+    }
+
+    @Transactional(readOnly = true)
+    public PodcastTranscriptResponse getPodcastTranscript(Long podcastId) {
+
+        // 팟캐스트 조회
+        Podcast podcast = podcastRepository.findById(podcastId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("존재하지 않는 팟캐스트입니다.")
+                );
+
+        return PodcastTranscriptResponse.from(podcast);
     }
 }

@@ -3,6 +3,7 @@ package com.lingcast.server.domain.podcast.controller;
 import com.lingcast.server.domain.podcast.dto.PodcastCreateResponse;
 import com.lingcast.server.domain.podcast.dto.PodcastDetailResponse;
 import com.lingcast.server.domain.podcast.dto.PodcastListResponse;
+import com.lingcast.server.domain.podcast.dto.PodcastTranscriptResponse;
 import com.lingcast.server.domain.podcast.service.PodcastService;
 import com.lingcast.server.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,20 @@ public class PodcastController {
         return ApiResponse.success(
                 response,
                 "팟캐스트 목록 조회에 성공했습니다."
+        );
+    }
+
+    @GetMapping("/{podcastId}/transcript")
+    public ApiResponse<PodcastTranscriptResponse> getPodcastTranscript(
+            @PathVariable Long podcastId
+    ) {
+        // 팟캐스트 Transcript 조회
+        PodcastTranscriptResponse response =
+                podcastService.getPodcastTranscript(podcastId);
+
+        return ApiResponse.success(
+                response,
+                "팟캐스트 Transcript 조회에 성공했습니다."
         );
     }
 }
