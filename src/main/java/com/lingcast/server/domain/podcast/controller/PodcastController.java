@@ -1,10 +1,7 @@
 package com.lingcast.server.domain.podcast.controller;
 
 import com.lingcast.server.domain.podcast.client.GeminiTtsClient;
-import com.lingcast.server.domain.podcast.dto.PodcastCreateResponse;
-import com.lingcast.server.domain.podcast.dto.PodcastDetailResponse;
-import com.lingcast.server.domain.podcast.dto.PodcastListResponse;
-import com.lingcast.server.domain.podcast.dto.PodcastTranscriptResponse;
+import com.lingcast.server.domain.podcast.dto.*;
 import com.lingcast.server.domain.podcast.service.PodcastService;
 import com.lingcast.server.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -78,6 +75,21 @@ public class PodcastController {
         return ApiResponse.success(
                 response,
                 "팟캐스트 Transcript 조회에 성공했습니다."
+        );
+    }
+
+    @GetMapping("/{podcastId}/status")
+    public ApiResponse<PodcastStatusResponse> getPodcastStatus(
+            @PathVariable Long podcastId
+    ) {
+
+        // 팟캐스트 생성 상태 조회
+        PodcastStatusResponse response =
+                podcastService.getPodcastStatus(podcastId);
+
+        return ApiResponse.success(
+                response,
+                "팟캐스트 생성 상태 조회에 성공했습니다."
         );
     }
 }

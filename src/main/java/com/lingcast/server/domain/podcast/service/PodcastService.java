@@ -194,4 +194,18 @@ public class PodcastService {
 
         return PodcastTranscriptResponse.from(podcast);
     }
+
+    @Transactional(readOnly = true)
+    public PodcastStatusResponse getPodcastStatus(Long podcastId) {
+
+        // 팟캐스트 조회
+        Podcast podcast = podcastRepository.findById(podcastId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "존재하지 않는 팟캐스트입니다."
+                        )
+                );
+
+        return PodcastStatusResponse.from(podcast);
+    }
 }
