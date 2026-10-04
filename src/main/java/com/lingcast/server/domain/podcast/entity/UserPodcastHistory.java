@@ -43,4 +43,27 @@ public class UserPodcastHistory {
 
     @Column(name = "last_listened_at")
     private LocalDateTime lastListenedAt;
+
+    // 팟캐스트 청취 기록 생성
+    public static UserPodcastHistory create(
+            User user,
+            Podcast podcast,
+            Integer progressSec
+    ) {
+        UserPodcastHistory history = new UserPodcastHistory();
+
+        history.user = user;
+        history.podcast = podcast;
+        history.progressSec = progressSec;
+        history.completed = false;
+        history.lastListenedAt = LocalDateTime.now();
+
+        return history;
+    }
+
+    // 팟캐스트 재생 위치 업데이트
+    public void updateProgress(Integer progressSec) {
+        this.progressSec = progressSec;
+        this.lastListenedAt = LocalDateTime.now();
+    }
 }

@@ -8,8 +8,10 @@ import com.lingcast.server.domain.podcast.client.GeminiTtsClient;
 import com.lingcast.server.domain.podcast.dto.*;
 import com.lingcast.server.domain.podcast.entity.Podcast;
 import com.lingcast.server.domain.podcast.entity.PodcastNews;
+import com.lingcast.server.domain.podcast.entity.UserPodcastHistory;
 import com.lingcast.server.domain.podcast.repository.PodcastNewsRepository;
 import com.lingcast.server.domain.podcast.repository.PodcastRepository;
+import com.lingcast.server.domain.podcast.repository.UserPodcastHistoryRepository;
 import com.lingcast.server.domain.user.entity.User;
 import com.lingcast.server.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class PodcastService {
     private final PodcastNewsRepository podcastNewsRepository;
     private final GeminiTtsClient geminiTtsClient;
     private final AudioFileService audioFileService;
+    private final UserPodcastHistoryRepository userPodcastHistoryRepository;
 
     @Transactional
     public PodcastCreateResponse generatePodcast(Long userId, String category) {
@@ -207,5 +210,44 @@ public class PodcastService {
                 );
 
         return PodcastStatusResponse.from(podcast);
+    }
+
+    @Transactional
+    public void updatePodcastProgress(
+            Long userId,
+            Long podcastId,
+            PodcastProgressRequest request
+    ) {
+
+        // 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("존재하지 않는 사용자입니다.")
+                );
+
+        // 팟캐스트 조회
+        Podcast podcast = podcastRepository.findById(podcastId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("존재하지 않는 팟캐스트입니다.")
+                );
+
+        // 기존 청취 기록이 있는지 확인
+        UserPodcastHistory history =
+                userPodcastHistoryRepository
+                        .findByUserIdAndPodcastId(userId, podcastId)
+                        .orElseGet(() ->
+                                UserPodcastHistory.create(
+                                        user,
+                                        podcast,
+                                        request.progressSec()
+                                )
+                        );
+
+        // 기존 기록이면 재생 위치 업데이트
+        if (history.getId() != null) {
+            history.updateProgress(request.progressSec());
+        }
+
+        userPodcastHistoryRepository.save(history);
     }
 }

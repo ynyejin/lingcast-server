@@ -4,6 +4,7 @@ import com.lingcast.server.domain.podcast.client.GeminiTtsClient;
 import com.lingcast.server.domain.podcast.dto.*;
 import com.lingcast.server.domain.podcast.service.PodcastService;
 import com.lingcast.server.global.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -90,6 +91,26 @@ public class PodcastController {
         return ApiResponse.success(
                 response,
                 "팟캐스트 생성 상태 조회에 성공했습니다."
+        );
+    }
+
+    @PatchMapping("/{podcastId}/progress")
+    public ApiResponse<Void> updatePodcastProgress(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long podcastId,
+            @Valid @RequestBody PodcastProgressRequest request
+    ) {
+
+        // 사용자의 팟캐스트 재생 위치 저장
+        podcastService.updatePodcastProgress(
+                userId,
+                podcastId,
+                request
+        );
+
+        return ApiResponse.success(
+                null,
+                "팟캐스트 재생 위치 저장에 성공했습니다."
         );
     }
 }
