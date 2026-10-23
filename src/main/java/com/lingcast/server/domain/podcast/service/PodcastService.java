@@ -22,8 +22,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class PodcastService {
@@ -38,65 +36,84 @@ public class PodcastService {
     private final UserPodcastHistoryRepository userPodcastHistoryRepository;
 
     @Transactional
-    public PodcastCreateResponse generatePodcast(Long userId, String category) {
+    public PodcastCreateResponse generatePodcast(
+            Long userId,
+            Long newsId
+    ) {
 
-        // 로그인한 사용자 조회
+        // 1. 로그인한 사용자 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "존재하지 않는 사용자입니다."
+                        )
+                );
 
         EnglishLevel englishLevel = user.getEnglishLevel();
 
-        // 해당 카테고리의 최신 뉴스 3개 조회
-        List<News> newsList =
-                newsRepository.findTop3ByCategoryOrderByPublishedAtDesc(category);
+        // 2. 선택한 뉴스 조회
+        News news = newsRepository.findById(newsId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "존재하지 않는 뉴스입니다."
+                        )
+                );
 
-        if (newsList.isEmpty()) {
-            throw new IllegalArgumentException("팟캐스트를 생성할 뉴스가 없습니다.");
+        // 3. 이미 생성 완료된 팟캐스트가 있다면 재사용
+        Podcast existingPodcast =
+                podcastNewsRepository.findCompletedPodcast(
+                        newsId,
+                        englishLevel
+                ).orElse(null);
+
+        if (existingPodcast != null) {
+            return PodcastCreateResponse.from(existingPodcast);
         }
 
-        // Gemini 프롬프트 생성
-        String prompt = createPrompt(category, englishLevel, newsList);
+        // 4. 선택한 뉴스로 Gemini 프롬프트 생성
+        String prompt = createPrompt(
+                englishLevel,
+                news
+        );
 
-        // Gemini로 팟캐스트 스크립트 생성
+        // 5. 영어 팟캐스트 스크립트 생성
         String script = geminiClient.generateText(prompt);
 
-        // 팟캐스트 저장
+        // 6. 팟캐스트 저장
         Podcast podcast = Podcast.create(
-                createPodcastTitle(category),
-                category,
+                news.getTitle(),
+                news.getCategory(),
                 englishLevel,
                 script
         );
 
         podcastRepository.save(podcast);
 
-        // 팟캐스트와 사용된 뉴스 연결
-        List<PodcastNews> podcastNewsList = newsList.stream()
-                .map(news -> PodcastNews.create(podcast, news))
-                .toList();
+        // 7. 원본 뉴스와 팟캐스트 연결
+        PodcastNews podcastNews =
+                PodcastNews.create(podcast, news);
 
-        podcastNewsRepository.saveAll(podcastNewsList);
+        podcastNewsRepository.save(podcastNews);
 
         try {
-            // 생성된 팟캐스트 스크립트를 음성으로 변환
+
+            // 8. Gemini TTS로 음성 생성
             byte[] pcmAudio =
                     geminiTtsClient.generateSpeech(script);
 
-            // PCM 데이터를 WAV 파일로 저장
+            // 9. WAV 파일 저장
             String audioUrl =
                     audioFileService.saveAsWav(
                             podcast.getId(),
                             pcmAudio
                     );
 
-            // 팟캐스트 생성 완료 처리
+            // 10. 생성 완료 처리
             podcast.complete(audioUrl, null);
 
         } catch (Exception e) {
 
-            // TTS 또는 음성 파일 생성 실패 처리
             podcast.fail();
-
             throw e;
         }
 
@@ -104,75 +121,61 @@ public class PodcastService {
     }
 
     private String createPrompt(
-            String category,
             EnglishLevel englishLevel,
-            List<News> newsList
+            News news
     ) {
 
-        StringBuilder prompt = new StringBuilder();
+        return """
+                You are a script writer for LingCast,
+                an English-learning news podcast.
 
-        prompt.append("""
-            You are a script writer for LingCast,
-            an English-learning news podcast.
+                Create one short English podcast script
+                based on the news article below.
 
-            Create one short English podcast script using the news stories below.
+                English Level: %s
 
-            Category: %s
-            English Level: %s
+                Requirements:
+                - Focus only on the provided news story.
+                - Explain the news naturally and accurately.
+                - Adjust vocabulary and sentence complexity
+                  to the English level.
+                - BEGINNER: Use simple vocabulary and short sentences.
+                - INTERMEDIATE: Use natural everyday news English.
+                - ADVANCED: Use sophisticated vocabulary and
+                  sentence structures.
+                - Do not invent facts that are not provided.
+                - Start with a short LingCast introduction.
+                - End with a short closing.
+                - Output only the English podcast script.
 
-            Requirements:
-            - Combine the news stories into one natural podcast episode.
-            - Introduce each story separately.
-            - Adjust vocabulary and sentence complexity to the English level.
-            - BEGINNER: Use simple vocabulary and short sentences.
-            - INTERMEDIATE: Use natural everyday news English.
-            - ADVANCED: Use more sophisticated vocabulary and sentence structures.
-            - Do not invent facts that are not provided.
-            - Start with a short LingCast introduction.
-            - End with a short closing.
-
-            """.formatted(category, englishLevel));
-
-        for (int i = 0; i < newsList.size(); i++) {
-
-            News news = newsList.get(i);
-
-            prompt.append("""
-                News %d
-                Title: %s
-                Summary: %s
-
+                News Title: %s
+                News Summary: %s
                 """.formatted(
-                    i + 1,
-                    news.getTitle(),
-                    news.getSummary()
-            ));
-        }
-
-        return prompt.toString();
-    }
-
-    private String createPodcastTitle(String category) {
-        // 카테고리별 팟캐스트 제목 생성
-        return "Today's " + category + " Briefing";
+                englishLevel,
+                news.getTitle(),
+                news.getSummary()
+        );
     }
 
     @Transactional(readOnly = true)
     public PodcastDetailResponse getPodcastDetail(Long podcastId) {
 
-        // 팟캐스트 조회
         Podcast podcast = podcastRepository.findById(podcastId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("존재하지 않는 팟캐스트입니다.")
+                        new IllegalArgumentException(
+                                "존재하지 않는 팟캐스트입니다."
+                        )
                 );
 
         return PodcastDetailResponse.from(podcast);
     }
 
     @Transactional(readOnly = true)
-    public PodcastListResponse getPodcastList(int page, int size) {
+    public PodcastListResponse getPodcastList(
+            int page,
+            int size
+    ) {
 
-        // 최신 생성된 팟캐스트부터 조회
         Pageable pageable = PageRequest.of(
                 page,
                 size,
@@ -187,21 +190,25 @@ public class PodcastService {
     }
 
     @Transactional(readOnly = true)
-    public PodcastTranscriptResponse getPodcastTranscript(Long podcastId) {
+    public PodcastTranscriptResponse getPodcastTranscript(
+            Long podcastId
+    ) {
 
-        // 팟캐스트 조회
         Podcast podcast = podcastRepository.findById(podcastId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("존재하지 않는 팟캐스트입니다.")
+                        new IllegalArgumentException(
+                                "존재하지 않는 팟캐스트입니다."
+                        )
                 );
 
         return PodcastTranscriptResponse.from(podcast);
     }
 
     @Transactional(readOnly = true)
-    public PodcastStatusResponse getPodcastStatus(Long podcastId) {
+    public PodcastStatusResponse getPodcastStatus(
+            Long podcastId
+    ) {
 
-        // 팟캐스트 조회
         Podcast podcast = podcastRepository.findById(podcastId)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
@@ -219,22 +226,26 @@ public class PodcastService {
             PodcastProgressRequest request
     ) {
 
-        // 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("존재하지 않는 사용자입니다.")
+                        new IllegalArgumentException(
+                                "존재하지 않는 사용자입니다."
+                        )
                 );
 
-        // 팟캐스트 조회
         Podcast podcast = podcastRepository.findById(podcastId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("존재하지 않는 팟캐스트입니다.")
+                        new IllegalArgumentException(
+                                "존재하지 않는 팟캐스트입니다."
+                        )
                 );
 
-        // 기존 청취 기록이 있는지 확인
         UserPodcastHistory history =
                 userPodcastHistoryRepository
-                        .findByUserIdAndPodcastId(userId, podcastId)
+                        .findByUserIdAndPodcastId(
+                                userId,
+                                podcastId
+                        )
                         .orElseGet(() ->
                                 UserPodcastHistory.create(
                                         user,
@@ -243,9 +254,10 @@ public class PodcastService {
                                 )
                         );
 
-        // 기존 기록이면 재생 위치 업데이트
         if (history.getId() != null) {
-            history.updateProgress(request.progressSec());
+            history.updateProgress(
+                    request.progressSec()
+            );
         }
 
         userPodcastHistoryRepository.save(history);
@@ -257,24 +269,24 @@ public class PodcastService {
             Long podcastId
     ) {
 
-        // 팟캐스트 존재 여부 확인
         if (!podcastRepository.existsById(podcastId)) {
             throw new IllegalArgumentException(
                     "존재하지 않는 팟캐스트입니다."
             );
         }
 
-        // 사용자의 청취 기록 조회
         UserPodcastHistory history =
                 userPodcastHistoryRepository
-                        .findByUserIdAndPodcastId(userId, podcastId)
+                        .findByUserIdAndPodcastId(
+                                userId,
+                                podcastId
+                        )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "팟캐스트 청취 기록이 없습니다."
                                 )
                         );
 
-        // 청취 완료 처리
         history.complete();
     }
 }
