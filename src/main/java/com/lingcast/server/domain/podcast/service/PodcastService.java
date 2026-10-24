@@ -231,6 +231,7 @@ public class PodcastService {
         return PodcastListResponse.from(podcastPage);
     }
 
+
     @Transactional(readOnly = true)
     public PodcastTranscriptResponse getPodcastTranscript(
             Long podcastId
@@ -243,7 +244,15 @@ public class PodcastService {
                         )
                 );
 
-        return PodcastTranscriptResponse.from(podcast);
+        // WhisperX가 저장한 문장별 자막 조회
+        List<PodcastSentence> sentences =
+                podcastSentenceRepository
+                        .findByPodcastIdOrderBySentenceIndexAsc(podcastId);
+
+        return PodcastTranscriptResponse.from(
+                podcast,
+                sentences
+        );
     }
 
     @Transactional(readOnly = true)
