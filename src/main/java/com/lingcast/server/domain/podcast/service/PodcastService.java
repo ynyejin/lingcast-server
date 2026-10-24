@@ -11,6 +11,7 @@ import com.lingcast.server.domain.podcast.entity.PodcastNews;
 import com.lingcast.server.domain.podcast.entity.UserPodcastHistory;
 import com.lingcast.server.domain.podcast.repository.PodcastNewsRepository;
 import com.lingcast.server.domain.podcast.repository.PodcastRepository;
+import com.lingcast.server.domain.podcast.repository.PodcastSentenceRepository;
 import com.lingcast.server.domain.podcast.repository.UserPodcastHistoryRepository;
 import com.lingcast.server.domain.user.entity.User;
 import com.lingcast.server.domain.user.repository.UserRepository;
@@ -21,6 +22,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import com.lingcast.server.domain.podcast.entity.PodcastSentence;
+import com.lingcast.server.domain.podcast.repository.PodcastSentenceRepository;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +43,9 @@ public class PodcastService {
     private final GeminiTtsClient geminiTtsClient;
     private final AudioFileService audioFileService;
     private final UserPodcastHistoryRepository userPodcastHistoryRepository;
+    private final PodcastScriptSplitter podcastScriptSplitter;
+    private final PodcastSentenceRepository podcastSentenceRepository;
+    private final PodcastAlignmentService podcastAlignmentService;
 
     @Transactional
     public PodcastCreateResponse generatePodcast(
@@ -70,7 +82,7 @@ public class PodcastService {
             return PodcastCreateResponse.from(existingPodcast);
         }
 
-        // 4. 선택한 뉴스로 Gemini 프롬프트 생성
+        // 4. Gemini 프롬프트 생성
         String prompt = createPrompt(
                 englishLevel,
                 news
@@ -97,7 +109,7 @@ public class PodcastService {
 
         try {
 
-            // 8. Gemini TTS로 음성 생성
+            // 8. 전체 스크립트를 한 번에 TTS로 변환
             byte[] pcmAudio =
                     geminiTtsClient.generateSpeech(script);
 
@@ -108,14 +120,44 @@ public class PodcastService {
                             pcmAudio
                     );
 
-            // 10. 생성 완료 처리
-            podcast.complete(audioUrl, null);
+            // 10. 실제 음성 길이 계산
+            long durationMs =
+                    audioFileService.calculateDurationMs(pcmAudio);
+
+            int durationSec =
+                    (int) Math.ceil(durationMs / 1000.0);
+
+            // 11. 팟캐스트 생성 완료
+            podcast.complete(audioUrl, durationSec);
 
         } catch (Exception e) {
 
             podcast.fail();
             throw e;
         }
+
+
+        // 팟캐스트 생성 트랜잭션이 정상 커밋된 후
+        // WhisperX 자막 분석을 비동기로 시작
+        Long podcastId = podcast.getId();
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            podcastAlignmentService.alignAsync(podcastId);
+                        } catch (Exception e) {
+                            // 자막 분석 시작 실패가 음성 재생을 방해하지 않도록 처리
+                            System.err.println(
+                                    "WhisperX 비동기 작업 시작 실패: "
+                                            + e.getMessage()
+                            );
+                        }
+                    }
+                }
+        );
 
         return PodcastCreateResponse.from(podcast);
     }

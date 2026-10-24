@@ -38,3 +38,5 @@ out/
 
 # Generated podcast audio files
 uploads/
+
+.venv-whisperx/
